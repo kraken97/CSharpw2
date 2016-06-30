@@ -14,9 +14,6 @@ namespace ConsoleApplication
 
         static void Main()
         {
-
-
-            PhrazeParser("dog say hellofdg dgsd fdg.");
             var res = Parser.Parse("Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;} dog say hellofdg dgsd fdg. Person{gender=m;firstName=kek1;lastName=llek;birthDate=1997/11/11;}  Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;} аыв а   аыв аы ыавы а ываы Person{gender=m;firstName=kek1;lastName=llek;birthDate=1997/11/11;}"
             , PhrazeParser,PersonParser);
             System.Console.WriteLine("**********");
