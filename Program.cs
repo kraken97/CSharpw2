@@ -206,7 +206,6 @@ namespace ConsoleApplication
             List<IComparable> list = new List<IComparable>();
             for (int i = 0; i < delegatesList.Length; i++)
             {
-                System.Console.WriteLine(delegatesList.Length);
                 try
                 {
                     var res = delegatesList[i](str);
@@ -214,7 +213,6 @@ namespace ConsoleApplication
                         for (int j = 0; j < res.Count; j++)
                         {
                             list.Add(res[j]);
-                            System.Console.WriteLine(res[j]);
                         }
                 }
                 catch (System.Exception)
