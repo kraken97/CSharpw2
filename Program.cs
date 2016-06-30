@@ -14,13 +14,17 @@ namespace ConsoleApplication
 
         static void Main()
         {
-            var res=Parser.Parse("Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;} аыв а   аыв аы ыавы а ываы Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;}"
-            ,PersonParser); 
+
+
+            PhrazeParser("dog say hellofdg dgsd fdg.");
+            var res = Parser.Parse("Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;} dog say hellofdg dgsd fdg. Person{gender=m;firstName=kek1;lastName=llek;birthDate=1997/11/11;}  Person{gender=m;firstName=kek;lastName=llek;birthDate=1997/11/11;} аыв а   аыв аы ыавы а ываы Person{gender=m;firstName=kek1;lastName=llek;birthDate=1997/11/11;}"
+            , PhrazeParser,PersonParser);
             System.Console.WriteLine("**********");
             foreach (var item in res)
             {
                 System.Console.WriteLine(item);
             }
+            System.Console.WriteLine("removing dublicates");
             res.RemoveDuplicates();
             foreach (var item in res)
             {
@@ -30,7 +34,7 @@ namespace ConsoleApplication
 
         }
 
-        static Person parsePerson(string[] s)
+        private static Person parsePerson(string[] s)
         {
             string firstName = "";
             string lastName = "";
@@ -38,11 +42,9 @@ namespace ConsoleApplication
             DateTime birthDate = new DateTime(1996, 1, 1);
             for (int i = 0; i < 4; i++)
             {
-                System.Console.WriteLine(s[i]);
                 string[] propAndVal = s[i].Split('=');
                 string prop = propAndVal[0];
                 string val = propAndVal[1];
-                System.Console.WriteLine(prop + " " + val + " " + i);
                 switch (i)
                 {
                     case 0:
@@ -66,7 +68,6 @@ namespace ConsoleApplication
                             throw new FieldAccessException("error while parsing file prop firstName does not exist");
                         break;
                     case 2:
-                        System.Console.WriteLine($"{prop}-{val}");
                         if (prop == "lastName")
                         {
                             lastName = val;
@@ -95,6 +96,26 @@ namespace ConsoleApplication
             return new Person(firstName, lastName, gender, birthDate);
 
         }
+
+
+        public static IList<IComparable> PhrazeParser(string str)
+        {
+            const string rgx = @"(\w+)\ssay\s((\w+\s{0,})+)\.";
+            var m = Regex.Matches(str, rgx);
+            List <IComparable> list =new List<IComparable>();
+            for (int i = 0; i < m.Count; i++)
+            {
+                var item = m[i];
+                var speaker = item.Groups[1].Value;
+                var words = item.Groups[2].Value;
+                list.Add(new Phraze(){Speaker=speaker,Words=words});
+            }
+            return list;
+
+        }
+
+
+
         static IList<IComparable> PersonParser(string str)
         {
             string text = str;
@@ -110,7 +131,6 @@ namespace ConsoleApplication
             while (m.Success)
             {
                 Group g = m.Groups[1];
-                Console.WriteLine(g);
                 if (g.Value != null)
                 {
                     string[] s = g.Value.ToString().Split(';');
@@ -118,10 +138,62 @@ namespace ConsoleApplication
                 }
 
                 m = m.NextMatch();
-                
+
             }
-           
+
             return resultList;
+        }
+    }
+
+
+    internal class Phraze : IComparable
+    {
+        public string Speaker { get; set; }
+        public string Words { get; set; }
+        public override string ToString(){
+            return $"{Speaker}  say {Words}";
+        }
+
+        public int CompareTo(object obj)
+        {
+
+
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return -1;
+            }
+            var it=obj as Phraze;
+            var res = this.Speaker.CompareTo(it.Speaker);
+
+            if (res==0)
+            {
+                return  it.Words.CompareTo(this.Words);
+            }
+            return res;
+
+        }
+
+        public override bool Equals(object obj)
+        {
+
+
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+            var it = obj as Phraze;
+            return it.Words == this.Words && it.Speaker == this.Speaker;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 100000;
+                hash = (hash * int.MaxValue) ^ this.Words.GetHashCode();
+                hash = (hash * int.MaxValue) ^ this.Speaker.GetHashCode();
+                return hash;
+            }
         }
     }
 
@@ -129,49 +201,30 @@ namespace ConsoleApplication
 
 
 
-    //Person{([^\{]{0,}[a-zA-z1234567890_]{1,}=[a-zA-z1234567890_]{1,};){0,1}}
-
-
-
-    public static class  Parser
+    public static class Parser
     {
 
-         public  static void RemoveDuplicates(this IList<IComparable> list)
-        {
-            for (int i = 0; i < list.Count; i++)
-            {
-                //element which dublicates we are looking for
-                var currentElem = list[i];
-                //j  = i+1  will not include  currentElem;
-                for (int j = i + 1; j < list.Count; j++)
-                {
-                    if (currentElem.CompareTo(list[j]) == 0)
-                    {
-                         list.RemoveAt(j);
-                        //back to the prev index if we dont do this we skip 1 element   
-                        j--;
-                    }
-                }
-            }
-        }
         public static IList<IComparable> Parse(string str, params Func<string, IList<IComparable>>[] delegatesList)
         {
             List<IComparable> list = new List<IComparable>();
             for (int i = 0; i < delegatesList.Length; i++)
             {
-
+                System.Console.WriteLine(delegatesList.Length);
                 try
                 {
                     var res = delegatesList[i](str);
                     if (res != null)
-                        for (int j = 0; j < res.Count; i++)
+                        for (int j = 0; j < res.Count; j++)
                         {
-                            list.Add(res[i]);
+                            list.Add(res[j]);
+                            System.Console.WriteLine(res[j]);
                         }
                 }
                 catch (System.Exception)
                 {
+                    //catch errors
                     System.Console.Error.WriteLine("error happened while parsing file , the result may be unpredictable");
+                throw;
                 }
             }
             return list;
@@ -201,6 +254,30 @@ namespace ConsoleApplication
         {
             var res = this.FirstName.CompareTo(other.FirstName);
             return res == 0 ? this.LastName.CompareTo(other.LastName) : res;
+        }
+        // override object.Equals
+        public override bool Equals(object obj)
+        {
+
+
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            return this.CompareTo(obj as Name) == 0;
+        }
+
+        // override object.GetHashCode
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = 6000;
+                hash = (hash * 5000) ^ this.FirstName.GetHashCode();
+                hash = (hash * 5000) ^ this.FirstName.GetHashCode();
+                return hash;
+            }
         }
     }
     internal class Person : IComparable
@@ -261,6 +338,32 @@ namespace ConsoleApplication
             }
             return res;
         }
+        public override bool Equals(object obj)
+        {
+
+
+            if (obj == null || GetType() != obj.GetType())
+            {
+                return false;
+            }
+
+            return this.CompareTo(obj as Person) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+
+                int v = 5000;
+                int hash = (v * 5000) ^ this.BirhtDate.GetHashCode();
+                hash = (hash * 5000) ^ this.Gender.GetHashCode();
+                hash = (hash * 5000) ^ this.Name.GetHashCode();
+                return hash;
+
+            }
+
+        }
     }
     internal class UsCitizen : Person
     {
@@ -302,7 +405,7 @@ namespace ConsoleApplication
         }
 
 
-       
+
 
         public void Sort()
         {
@@ -360,6 +463,26 @@ namespace ConsoleApplication
 
     static class Utils
     {
+
+        public static void RemoveDuplicates(this IList<IComparable> list)
+        {
+
+            for (int i = 0; i < list.Count; i++)
+            {
+                //element which dublicates we are looking for
+                var currentElem = list[i];
+                //j  = i+1  will not include  currentElem;
+                for (int j = i + 1; j < list.Count; j++)
+                {
+                    if (currentElem.CompareTo(list[j]) == 0)
+                    {
+                        list.RemoveAt(j);
+                        //back to the prev index if we dont do this we skip 1 element   
+                        j--;
+                    }
+                }
+            }
+        }
         public static void swap<T>(ref T a, ref T b)
         {
             var temp = a;
