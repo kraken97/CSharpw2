@@ -1,3 +1,4 @@
 [ C# tasks](https://github.com/kraken97/PrimiteMenyaNaRabotu/blob/master/Program.cs)
 ___
-[Frontend ](https://github.com/kraken97/AzureSite/tree/gh-pages/builds)
+[Frontend (code) ](https://github.com/kraken97/AzureSite/tree/gh-pages/builds)
+[Preview](https://kraken97.github.io/AzureSite/builds/)
