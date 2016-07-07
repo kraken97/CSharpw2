@@ -1,5 +1,7 @@
 ﻿using System;
 using System.IO;
+using System.IO.Compression;
+using System.Xml;
 using System.Xml.Serialization;
 namespace ConsoleApplication
 {
@@ -9,27 +11,44 @@ namespace ConsoleApplication
         {
 
 
-            
+
             Serializer<int> sr = new Serializer<int>();
             System.Console.WriteLine("serialazing two numbers");
             sr.Serialize("./TestDir", "kke.xml", 0);
             sr.Serialize("./TestDir", "2.xml", 234);
-            Serializer<string> s =new Serializer<string>();
+            Serializer<string> s = new Serializer<string>();
             System.Console.WriteLine("serialazing string");
-            s.Serialize("./TestDir", "2.xml","TestDir");
-            Serializer<Test> l =new Serializer<Test>();
-            l.Serialize("./TestDir","lol.xml",new Test(){Finish="kke",Start=123,Date=new DateTime(1996,1,1)});
-      
-      System.Console.WriteLine("Deserialize Test obj");
-           var er= l.Deserialize("./TestDir","lol.xml");
-           System.Console.WriteLine(er);
 
-           System.Console.WriteLine("Serialization with dynamic");
-            Serializer<dynamic> dynamic_serializer =new Serializer<dynamic>();
-            string name="test";
-            int id=1;
-            dynamic_serializer.Serialize("./TestDir","test.xml",new {name,id});
+            s.Serialize("./TestDir", "2.xml", "TestDir");
+            Serializer<Test> l = new Serializer<Test>();
+            var testobj = new Test() { Finish = "kke", Start = 123, Date = new DateTime(1996, 1, 1) };
+            System.Console.WriteLine("serialazing testobj" + Environment.NewLine + testobj.ToString());
+            l.Serialize("./TestDir", "lol.xml", testobj);
 
+            System.Console.WriteLine("Deserialize Test obj");
+            var er = l.Deserialize("./TestDir", "lol.xml");
+            System.Console.WriteLine(er);
+
+
+            System.Console.WriteLine("Serialization with dynamic exeption expected");
+            Serializer<dynamic> dynamic_serializer = new Serializer<dynamic>();
+            string name = "test";
+            int id = 1;
+            dynamic_serializer.Serialize("./TestDir", "test.xml", new { name, id });
+
+
+        }
+    }
+
+    class InvalidTypeExeption : Exception
+    {
+        public InvalidTypeExeption()
+        {
+
+        }
+
+        public InvalidTypeExeption(string message) : base(message)
+        {
 
         }
     }
@@ -39,7 +58,8 @@ namespace ConsoleApplication
         public int Start { get; set; }
         public string Finish { get; set; }
         public DateTime Date { get; set; }
-        public override string ToString(){
+        public override string ToString()
+        {
             return $"{Start} {Finish} {Date}";
         }
 
@@ -48,36 +68,41 @@ namespace ConsoleApplication
     internal class Serializer<T>
     {
         private readonly XmlSerializer _serializer = new XmlSerializer(typeof(T));
+     
+
 
         public T Deserialize(string workingDirectory, string fileName)
         {
             var filePath = prepareDir(workingDirectory, fileName, typeof(T).ToString());
-            using (TextReader reader = new StreamReader(File.OpenRead(filePath)))
+            using (XmlReader reader = XmlReader.Create(File.OpenRead(filePath)))
             {
-                try
-                {
-                    return (T)_serializer.Deserialize(reader);
 
-                }
-                catch (Exception ex)
+                if (!_serializer.CanDeserialize(reader))
                 {
-                    System.Console.WriteLine(ex.Message);
-                    Console.ReadKey();
-                    Environment.Exit(0);
+                    throw new InvalidTypeExeption("you cant deserialize this data");
                 }
+                return (T)_serializer.Deserialize(reader);
+
             }
-            return default(T);
         }
         //create directory for file and return full filePath
         private static string prepareDir(string workingDirectory, string fileName, string typeName)
         {
 
             var separ = Path.DirectorySeparatorChar.ToString();
-            workingDirectory = workingDirectory + separ + typeName;
-            var filePath = workingDirectory + separ + fileName;
-            if (!Directory.Exists(workingDirectory))
+
+            string workingPath;
+            if (typeName.StartsWith("<>"))
             {
-                Directory.CreateDirectory(workingDirectory);
+                throw new InvalidTypeExeption("you cant serialize dynamics types ; your type should open contain parametrless constructor");
+
+            }
+
+            workingPath = workingDirectory + separ + typeName;
+            var filePath = workingPath + separ + fileName;
+            if (!Directory.Exists(workingPath))
+            {
+                Directory.CreateDirectory(workingPath);
             }
             return filePath;
         }
@@ -85,9 +110,8 @@ namespace ConsoleApplication
         public void Serialize(string workingDirectory, string fileName, T data)
         {
             var filePath = prepareDir(workingDirectory, fileName, data.GetType().ToString());
-            using (TextWriter writer = new StreamWriter(File.OpenWrite(filePath)))
+            using (Stream writer = File.OpenWrite(filePath))
             {
-
                 _serializer.Serialize(writer, data);
             }
         }
