@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Test xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <Start>
+    <int>1</int>
+    <int>3</int>
+    <int>5</int>
+    <int>6</int>
+  </Start>
+  <Finish>kke</Finish>
+  <Date>1996-01-01T00:00:00</Date>
+</Test>

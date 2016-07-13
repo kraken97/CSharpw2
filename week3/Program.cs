@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.IO.Compression;
 using System.Xml;
 using System.Xml.Serialization;
 namespace ConsoleApplication
@@ -21,13 +20,15 @@ namespace ConsoleApplication
 
             s.Serialize("./TestDir", "2.xml", "TestDir");
             Serializer<Test> l = new Serializer<Test>();
-            var testobj = new Test() { Finish = "kke", Start = 123, Date = new DateTime(1996, 1, 1) };
+            var testobj = new Test() { Finish = "kke", Start = new int[]{1,3,5,6}, Date = new DateTime(1996, 1, 1) };
             System.Console.WriteLine("serialazing testobj" + Environment.NewLine + testobj.ToString());
             l.Serialize("./TestDir", "lol.xml", testobj);
 
             System.Console.WriteLine("Deserialize Test obj");
             var er = l.Deserialize("./TestDir", "lol.xml");
             System.Console.WriteLine(er);
+
+            
 
 
             System.Console.WriteLine("Serialization with dynamic exeption expected");
@@ -55,7 +56,7 @@ namespace ConsoleApplication
 
     public class Test
     {
-        public int Start { get; set; }
+        public int[] Start { get; set; }
         public string Finish { get; set; }
         public DateTime Date { get; set; }
         public override string ToString()
